@@ -1,7 +1,6 @@
 package com.example.diego.comix;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.Menu;
@@ -12,6 +11,8 @@ import android.view.View;
 import android.widget.RelativeLayout;
 
 import net.sourceforge.opencamera.R;
+
+import java.util.ArrayList;
 
 
 public class MainActivity extends Activity {
@@ -26,6 +27,7 @@ public class MainActivity extends Activity {
     private OrientationEventListener orientationEventListener = null;
 
     protected myApplication app;
+    ArrayList<StripesView> StripeView;
 
 
 
@@ -39,14 +41,15 @@ public class MainActivity extends Activity {
         app = (myApplication)getApplication();
         app.CreateNewStripe();
 
+
         // create view for stripes visualization
         myStripesView = (StripesView)findViewById(R.id.myStripesView);
         myStripesView.init();
         myStripesView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(MainActivity.this, CreateActivity.class);
-                startActivity(intent);
+                //Intent intent = new Intent(MainActivity.this, CreateActivity.class);
+                //startActivity(intent);
             }
         });
 
@@ -123,7 +126,7 @@ public class MainActivity extends Activity {
         int align_parent_top = RelativeLayout.ALIGN_PARENT_TOP;
         int align_parent_bottom = RelativeLayout.ALIGN_PARENT_BOTTOM;
 
-        {
+        /*{
             // we use a dummy button, so that the GUI buttons keep their positioning even if the Settings button is hidden (visibility set to View.GONE)
             //View view = findViewById(R.id.myStripesView);
             RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams)myStripesView.getLayoutParams();
@@ -145,7 +148,7 @@ public class MainActivity extends Activity {
             view.setLayoutParams(layoutParams);
             view.setRotation(ui_rotation);
 
-        }
+        }*/
     }
 
 
@@ -178,7 +181,7 @@ public class MainActivity extends Activity {
 
         Bitmap bmp_shot = app.myStripe.scenes.get(0).bmp_shot;
         if (bmp_shot!=null){
-            myStripesView.setBmp(bmp_shot);
+            myStripesView.setStripe(app.myStripe);
         }
 
     }

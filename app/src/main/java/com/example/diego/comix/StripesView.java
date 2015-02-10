@@ -4,10 +4,15 @@ package com.example.diego.comix;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.util.AttributeSet;
-import android.view.View;
 import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.RectF;
+import android.util.AttributeSet;
+import android.util.Log;
+import android.view.MotionEvent;
+import android.view.View;
+
+import java.util.List;
 
 public class StripesView extends View
 {
@@ -20,10 +25,15 @@ public class StripesView extends View
 
     public void init(){setWillNotDraw(false);}
 
+    private static final String TAG = "StripesView";
+
     float x,y;
     Bitmap bmp_shot=null;
     int width;
     int height;
+    boolean LockSurface = false;
+    Scene scene;
+    List<fumetto> fumetti;
 
     public void setFaces(){
         invalidate();
@@ -41,8 +51,6 @@ public class StripesView extends View
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);
-
-
 
         //Measure Width
         if (widthMode == MeasureSpec.EXACTLY) {
@@ -77,6 +85,56 @@ public class StripesView extends View
 
 
 
+    //***************************************
+    //*************  TOUCH  *****************
+    //***************************************
+
+    @Override
+    public synchronized boolean onTouchEvent(MotionEvent ev) {
+
+        switch (ev.getAction()) {
+            case MotionEvent.ACTION_DOWN: {
+
+                // Use for disallow the parent  to get the control (scroll actions) of the touch event
+                if (LockSurface){
+                    this.getParent().requestDisallowInterceptTouchEvent(true);
+                }else {
+                    this.getParent().requestDisallowInterceptTouchEvent(false);
+                }
+                break;
+            }
+
+            case MotionEvent.ACTION_MOVE: {
+
+                break;
+            }
+
+            case MotionEvent.ACTION_UP:
+
+                Log.i(TAG, "Pressed and released on surface");
+                if (!LockSurface) {
+                    LockSurface = true;
+                    GUIEditScene();
+                }else{
+                    LockSurface=false;
+                }
+
+                TouchUp(ev.getX(), ev.getY());
+                break;
+        }
+        return true;
+    }
+
+
+    private void GUIEditScene(){
+        Log.i(TAG, "Surface locked, GUIEditScene");
+    }
+
+    private void TouchUp(float x,float y){
+
+    }
+
+
     @Override
     protected void onDraw(Canvas c) {
 
@@ -100,11 +158,27 @@ public class StripesView extends View
         c.drawCircle((float) x*10,(float)y*10,(float)100,paint1);
         c.drawCircle(50,50,(float)10,paint1);
 
+        /*** Draw fumetto ***/
+        if (this.scene!=null) {
+            if (fumetti.size()>0) {
+                Paint paint_f = new Paint();
+                paint_f.setColor(0xffffffff);
+                fumetto f = fumetti.get(0);
+                RectF r = new RectF(f.xi_r, f.yi_r, f.xf_r, f.yf_r);
+                float rad=50;
+                c.drawRoundRect(r, rad, rad, paint_f);
+                paint1.setTextSize(20);
+                c.drawText(f.testo,f.xi_r+rad*2, f.yi_r+rad*2,paint1);
+            }
+        }
 
     }
 
-    public void setBmp(Bitmap bmp){
-        this.bmp_shot = bmp;
+    public void setStripe(Stripe stripe){
+        this.bmp_shot = stripe.scenes.get(0).bmp_shot;
+        this.scene=stripe.scenes.get(0);
+        this.fumetti = stripe.scenes.get(0).fumetti;
+        fumetti.get(0).calcRealCoords(width,height);
         invalidate();
     }
 
