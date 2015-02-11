@@ -2,12 +2,14 @@ package com.example.diego.comix;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.OrientationEventListener;
 import android.view.Surface;
-import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 
 import net.sourceforge.opencamera.R;
@@ -27,8 +29,9 @@ public class MainActivity extends Activity {
     private OrientationEventListener orientationEventListener = null;
 
     protected myApplication app;
-    ArrayList<StripesView> StripeView;
+    ArrayList<StripesView> StripeViews;
 
+    ZoomableViewGroup myZoomableViewGroup;
 
 
 
@@ -39,9 +42,30 @@ public class MainActivity extends Activity {
 
         // Get the application instance
         app = (myApplication)getApplication();
-        app.CreateNewStripe();
+        app.setMainAct(this);
+
+        StripeViews = new ArrayList<StripesView>();
+        // get layout
+        myZoomableViewGroup = (ZoomableViewGroup)findViewById(R.id.myZoomableViewGroup);
+
+        /*
+        //????
+        ViewTreeObserver vto = myZoomableViewGroup.getViewTreeObserver();
+        vto.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                myZoomableViewGroup.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                int viewWidth = myZoomableViewGroup.getMeasuredWidth();
+
+            }
+        });
+
+        */
 
 
+
+
+        /*
         // create view for stripes visualization
         myStripesView = (StripesView)findViewById(R.id.myStripesView);
         myStripesView.init();
@@ -52,7 +76,10 @@ public class MainActivity extends Activity {
                 //startActivity(intent);
             }
         });
+        */
 
+
+        app.CreateNewStripe();
 
         orientationEventListener = new OrientationEventListener(this) {
             @Override
@@ -62,18 +89,57 @@ public class MainActivity extends Activity {
         };
 
 
-        /*// find the retained fragment on activity restarts
-        FragmentManager fm = getFragmentManager();
-        dataFragment = (RetainedFragment) fm.findFragmentByTag(“data”);
 
-        // create the fragment and data the first time
-        if (dataFragment == null) {
-            // add the fragment
-            dataFragment = new DataFragment();
-            fm.beginTransaction().add(dataFragment, “data”).commit();
-            // load the data from the web
-            dataFragment.setData(loadMyData());
-        }*/
+
+    }
+
+
+    public void AddViews(){
+        int id_scene;
+        boolean trovato;
+        int iSV_tro;
+
+
+        for (int iS =0; iS<app.myStripe.scenes.size(); iS++){
+            id_scene=app.myStripe.scenes.get(iS).id_scene;
+
+            // search id_scene in StripeViews
+            trovato = false;
+            iSV_tro = 0;
+            for (int iSV=0; iSV<StripeViews.size(); iSV++){
+                if (id_scene==StripeViews.get(iSV).id_scene){
+                    trovato=true;
+                    iSV_tro = iSV;
+                    break;
+                }
+            }
+
+            if (trovato==true){
+
+            }else{
+                // add new StripeViews
+                final StripesView mySV = new StripesView(this.getApplicationContext());
+                mySV.id_scene=id_scene;
+                mySV.setScene(app.myStripe.scenes.get(iS));
+
+                StripeViews.add(mySV);
+                myZoomableViewGroup.addView(mySV);
+
+                // Other attributes of backgroundImageView to modify
+                FrameLayout.LayoutParams mySVParams = new FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.WRAP_CONTENT,FrameLayout.LayoutParams.WRAP_CONTENT
+                );
+
+
+                mySVParams.setMargins(4, 5,4, 5);
+                mySVParams.gravity = Gravity.LEFT;
+                mySVParams.gravity = Gravity.BOTTOM;
+                mySV.setBackgroundColor(Color.parseColor("#44228888"));
+                mySV.setLayoutParams(mySVParams);
+            }
+
+
+        }
 
     }
 

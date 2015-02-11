@@ -18,11 +18,12 @@
         android:layout_height="wrap_content">
 
 
+    <!--
     <com.example.diego.comix.StripesView
         android:id="@+id/myStripesView"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content" />
-
+    -->
 
     </com.example.diego.comix.ZoomableViewGroup>
 

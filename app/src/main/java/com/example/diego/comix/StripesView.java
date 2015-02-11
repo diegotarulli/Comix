@@ -23,6 +23,10 @@ public class StripesView extends View
         super(context,attrs);
     }
 
+    public StripesView(Context context){
+        super(context);
+    }
+
     public void init(){setWillNotDraw(false);}
 
     private static final String TAG = "StripesView";
@@ -33,6 +37,7 @@ public class StripesView extends View
     int height;
     boolean LockSurface = false;
     Scene scene;
+    int id_scene;
     List<fumetto> fumetti;
 
     public void setFaces(){
@@ -44,21 +49,29 @@ public class StripesView extends View
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 
-        int desiredWidth = 100;
-        int desiredHeight = 100;
+        int desiredWidth = 400;
+        int desiredHeight = 400;
 
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
-        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        int parentWidth = MeasureSpec.getSize(widthMeasureSpec);
         int heightMode = MeasureSpec.getMode(heightMeasureSpec);
-        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
+        int parentHeight = MeasureSpec.getSize(heightMeasureSpec);
+
+        desiredHeight=(int)(scene.Nheight*parentHeight);
+        desiredWidth = (int)(desiredHeight*scene.Nwidht/scene.Nheight);
+        if (desiredWidth/scene.Nwidht>parentWidth) {
+            desiredWidth = (int)(scene.Nwidht * parentWidth);
+            desiredHeight = (int) (desiredWidth * scene.Nheight / scene.Nwidht);
+        }
+
 
         //Measure Width
         if (widthMode == MeasureSpec.EXACTLY) {
             //Must be this size
-            width = widthSize;
+            width = parentWidth;
         } else if (widthMode == MeasureSpec.AT_MOST) {
             //Can't be bigger than...
-            width = Math.min(desiredWidth, widthSize);
+            width = Math.min(desiredWidth, parentWidth);
         } else {
             //Be whatever you want
             width = desiredWidth;
@@ -67,10 +80,10 @@ public class StripesView extends View
         //Measure Height
         if (heightMode == MeasureSpec.EXACTLY) {
             //Must be this size
-            height = heightSize;
+            height = parentHeight;
         } else if (heightMode == MeasureSpec.AT_MOST) {
             //Can't be bigger than...
-            height = Math.min(desiredHeight, heightSize);
+            height = Math.min(desiredHeight, parentHeight);
         } else {
             //Be whatever you want
             height = desiredHeight;
@@ -160,10 +173,10 @@ public class StripesView extends View
 
         /*** Draw fumetto ***/
         if (this.scene!=null) {
-            if (fumetti.size()>0) {
+            if (this.scene.fumetti.size()>0) {
                 Paint paint_f = new Paint();
                 paint_f.setColor(0xffffffff);
-                fumetto f = fumetti.get(0);
+                fumetto f = this.scene.fumetti.get(0);
                 RectF r = new RectF(f.xi_r, f.yi_r, f.xf_r, f.yf_r);
                 float rad=50;
                 c.drawRoundRect(r, rad, rad, paint_f);
@@ -180,6 +193,10 @@ public class StripesView extends View
         this.fumetti = stripe.scenes.get(0).fumetti;
         fumetti.get(0).calcRealCoords(width,height);
         invalidate();
+    }
+
+    public void setScene(Scene myScene){
+        this.scene=myScene;
     }
 
 
