@@ -55,20 +55,28 @@ class Stripe{
         // Create scene based on new index or delete scene out of new matrix
 
         boolean foundScene;
+        int is_found;
         for (int i = 0; i < (righe); i++) {
             for (int c = 0; c < (colonne); c++) {
                 if (MPosition[i][c]>0){
                     // look for existing scene
                     foundScene=false;
+                    is_found=0;
                     for (int i_s=0; i_s<scenes.size(); i_s++){
                         if (scenes.get(i_s).id_scene==MPosition[i][c]){
                             foundScene=true;
+                            is_found = i_s;
+                            break;
                         }
                     }
                     if (foundScene==false){
-                        // add new scene to stripe
+                        // add new scene to stripe anc calc its size
                         Scene myscene = new Scene(MPosition[i][c],this);
                         scenes.add(myscene);
+                    }else{
+                        // re-calc founded scene size
+                        scenes.get(is_found).calcSize();
+
                     }
 
                 }
@@ -104,8 +112,6 @@ class Scene{
     }
 
     void calcSize(){
-
-
         //calc size based on the cell occupied in the MPosition
         Nheight=0;
         Nwidht=0;
@@ -130,9 +136,12 @@ class Scene{
         Nwidht = Nwidht/myS.colonne;
     }
 
+
+
     void setShot(Bitmap bmp){
         this.bmp_shot=bmp;
     }
+
 
     void addFumetto(){
         fumetto myfumetto = new fumetto();
@@ -222,8 +231,10 @@ public class myApplication extends Application {
         // Write new cell id
         newMPosition[0][1]=LastId+1;
 
+        // Add scene to matrix and calc again all the sizes
         myStripe.addCellScene(newMPosition);
-        // Add the view
+
+        // Update all the views
         MainAct.AddViews();
 
 

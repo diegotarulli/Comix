@@ -39,6 +39,7 @@ public class ZoomableViewGroup extends ViewGroup {
     private float mFocusX;
 
     private boolean LockOnSurface=false;
+    MainActivity MainAct;
 
     private float[] mInvalidateWorkingArray = new float[6];
     private float[] mDispatchTouchEventWorkingArray = new float[2];
@@ -58,6 +59,8 @@ public class ZoomableViewGroup extends ViewGroup {
         for (int i = 0; i < childCount; i++) {
             View child = getChildAt(i);
             if (child.getVisibility() != GONE) {
+                //child.layout(x, y, x+child.getMeasuredWidth(), y + child.getMeasuredHeight());
+                child.layout(l, t, l+child.getMeasuredWidth(), t + child.getMeasuredHeight());
                 child.layout(l, t, l+child.getMeasuredWidth(), t + child.getMeasuredHeight());
             }
         }
@@ -65,7 +68,6 @@ public class ZoomableViewGroup extends ViewGroup {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-
 
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
@@ -99,6 +101,9 @@ public class ZoomableViewGroup extends ViewGroup {
 
     }
 
+    public void setMainAct(MainActivity MainAct){
+        this.MainAct = MainAct;
+    }
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
@@ -113,14 +118,22 @@ public class ZoomableViewGroup extends ViewGroup {
                     return true;
                 }
             }
-            return false;
+
+        MainAct.AddViews();
+
+        return false;
+
     }
+
+
 
     /**
      * Although the docs say that you shouldn't override this, I decided to do
      * so because it offers me an easy way to change the invalidated area to my
      * likening.
      */
+
+    /*
     @Override
     public ViewParent invalidateChildInParent(int[] location, Rect dirty) {
 
@@ -138,6 +151,7 @@ public class ZoomableViewGroup extends ViewGroup {
         location[1] *= mScaleFactor;
         return super.invalidateChildInParent(location, dirty);
     }
+*/
 
     private float[] scaledPointsToScreenPoints(float[] a) {
         mScaleMatrix.mapPoints(a);

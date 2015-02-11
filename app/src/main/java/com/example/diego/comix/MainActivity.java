@@ -47,6 +47,9 @@ public class MainActivity extends Activity {
         StripeViews = new ArrayList<StripesView>();
         // get layout
         myZoomableViewGroup = (ZoomableViewGroup)findViewById(R.id.myZoomableViewGroup);
+        myZoomableViewGroup.setMainAct(this);
+
+        //FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(150, 150);
 
         /*
         //????
@@ -118,25 +121,40 @@ public class MainActivity extends Activity {
 
             }else{
                 // add new StripeViews
-                final StripesView mySV = new StripesView(this.getApplicationContext());
-                mySV.id_scene=id_scene;
-                mySV.setScene(app.myStripe.scenes.get(iS));
+                //final StripesView mySV = new StripesView(this.getApplicationContext());
 
-                StripeViews.add(mySV);
-                myZoomableViewGroup.addView(mySV);
+                StripeViews.add(iS,new StripesView(this.getApplicationContext()));
+                StripeViews.get(iS).id_scene=id_scene;
+                StripeViews.get(iS).setScene(app.myStripe.scenes.get(iS));
+
+                myZoomableViewGroup.addView(StripeViews.get(iS));
 
                 // Other attributes of backgroundImageView to modify
                 FrameLayout.LayoutParams mySVParams = new FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.WRAP_CONTENT,FrameLayout.LayoutParams.WRAP_CONTENT
                 );
-
-
                 mySVParams.setMargins(4, 5,4, 5);
                 mySVParams.gravity = Gravity.LEFT;
                 mySVParams.gravity = Gravity.BOTTOM;
-                mySV.setBackgroundColor(Color.parseColor("#44228888"));
-                mySV.setLayoutParams(mySVParams);
+                StripeViews.get(iS).setBackgroundColor(Color.parseColor("#44228888"));
+                StripeViews.get(iS).setLayoutParams(mySVParams);
+
+
             }
+
+
+            // try to move the view
+            FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) StripeViews.get(iS).getLayoutParams();
+
+            layoutParams.leftMargin = (iS+1)*500;
+            layoutParams.topMargin = 10;
+            layoutParams.rightMargin = -250;
+            layoutParams.bottomMargin = -250;
+            StripeViews.get(iS).setPadding(100,100,100,100);
+            StripeViews.get(iS).setLayoutParams(layoutParams);
+
+            myZoomableViewGroup.invalidate();
+
 
 
         }
@@ -251,6 +269,13 @@ public class MainActivity extends Activity {
         }
 
     }
+
+
+
+
+
+
+
 
 
     }

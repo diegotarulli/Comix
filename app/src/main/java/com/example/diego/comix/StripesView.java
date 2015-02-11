@@ -181,7 +181,7 @@ public class StripesView extends View
                 float rad=50;
                 c.drawRoundRect(r, rad, rad, paint_f);
                 paint1.setTextSize(20);
-                c.drawText(f.testo,f.xi_r+rad*2, f.yi_r+rad*2,paint1);
+                c.drawText(f.testo+" SC"+this.scene.id_scene,f.xi_r+rad*2, f.yi_r+rad*2,paint1);
             }
         }
 
