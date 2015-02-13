@@ -14,16 +14,16 @@ import android.view.View;
 
 import java.util.List;
 
-public class StripesView extends View
+public class SView extends View
 {
 
 
 
-    public StripesView(Context context, AttributeSet attrs){
+    public SView(Context context, AttributeSet attrs){
         super(context,attrs);
     }
 
-    public StripesView(Context context){
+    public SView(Context context){
         super(context);
     }
 
