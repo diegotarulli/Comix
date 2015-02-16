@@ -2910,7 +2910,8 @@ public class Preview implements SurfaceHolder.Callback {
                 }
                 if( bitmap != null ) {
 
-                    main_activity.app.myStripe.scenes.get(0).setShot(bitmap);
+                    int indx = main_activity.app.getCourrentIdScene();
+                    main_activity.app.myStripe.scenes.get(indx-1).setShot(bitmap);
 
                 }
 

@@ -1,18 +1,16 @@
 package com.example.diego.comix;
 
 import android.app.Activity;
-import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.OrientationEventListener;
 import android.view.ScaleGestureDetector;
 import android.view.Surface;
-import android.view.animation.Animation;
-import android.view.animation.TranslateAnimation;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 
@@ -24,18 +22,24 @@ import java.util.ArrayList;
 public class MainActivity extends Activity {
 
 
+    public static final int EDIT = 10;
 
-    public static SView mySView;
     private int current_orientation = 0;
     private OrientationEventListener orientationEventListener = null;
 
     protected myApplication app;
-    ArrayList<SView> StripeViews;
+    ArrayList<SView> SViews;
     FrameLayout myFrameLayout;
 
     public Stripe myStripe;
 
+    int FrameWidht;
+    int FrameHeight;
 
+    // attributes for pan and zoom
+    float x_center;
+    float y_center;
+    float scale;
 
 
     @Override
@@ -49,38 +53,60 @@ public class MainActivity extends Activity {
 
         myFrameLayout = (FrameLayout)findViewById(R.id.myFrameLayout);
 
+        SViews = new ArrayList<SView>();
 
-        StripeViews = new ArrayList<SView>();
 
+        // ######## SCENE 1 ################
         // create new stripe
         myStripe=new Stripe();
-        int Idx = myStripe.getLastIdScene();
+        int Idx = myStripe.getLastIdScene()+1;
         // TODO the MPosition should be inside Stripe class
         myStripe.MPosition[0][0]=Idx;
         Scene myscene = new Scene(Idx,myStripe);
         myStripe.scenes.add(myscene);
+        myStripe.calcScenesSize();
 
-
-        //create images
-        StripeViews.add(0,new SView(this.getApplicationContext()));
+        // for each scene inside stripe SView has to be done
+        //create images (SView obj)
+        SViews.add(0,new SView(this.getApplicationContext()));
         FrameLayout.LayoutParams Lp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,FrameLayout.LayoutParams.WRAP_CONTENT
+                FrameLayout.LayoutParams.MATCH_PARENT,FrameLayout.LayoutParams.MATCH_PARENT
         );
-        Lp.setMargins(250, 50,4, 5);
+        Lp.setMargins(0, 0,0, 0);
         Lp.gravity = Gravity.LEFT;
         Lp.gravity = Gravity.TOP;
-        myFrameLayout.addView(StripeViews.get(0),0,Lp);
+        SViews.get(Idx-1).setScene(myStripe.scenes.get(Idx-1));
+        SViews.get(Idx-1).id_scene=Idx;
+        SViews.get(Idx-1).setMA(this);
+        myFrameLayout.addView(SViews.get(Idx-1),Idx-1,Lp);
 
 
 
-        StripeViews.add(1,new SView(this.getApplicationContext()));
+        // ######## SCENE 2 ################
+        // create another scene on the stripe
+        Idx = myStripe.getLastIdScene()+1;
+        myStripe.setMPositionSize(1,2);
+        myStripe.MPosition[0][1]=Idx;
+        myscene = new Scene(Idx,myStripe);
+        myStripe.scenes.add(myscene);
+        myStripe.calcScenesSize();
+
+        // for each scene inside stripe SView has to be done
+        //create images (SView obj)
+        SViews.add(Idx-1,new SView(this.getApplicationContext()));
         Lp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT,FrameLayout.LayoutParams.WRAP_CONTENT
+                FrameLayout.LayoutParams.MATCH_PARENT,FrameLayout.LayoutParams.MATCH_PARENT
         );
-        Lp.setMargins(0, 0,4, 5);
+        Lp.setMargins(0, 0,0, 0);
         Lp.gravity = Gravity.LEFT;
         Lp.gravity = Gravity.TOP;
-        myFrameLayout.addView(StripeViews.get(1),1,Lp);
+        SViews.get(Idx-1).setScene(myStripe.scenes.get(Idx-1));
+        SViews.get(Idx-1).id_scene=Idx;
+        SViews.get(Idx-1).setMA(this);
+        myFrameLayout.addView(SViews.get(Idx-1),Idx-1,Lp);
+
+
+
 
 
 
@@ -97,6 +123,97 @@ public class MainActivity extends Activity {
 
 
     }
+
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+
+        super.onWindowFocusChanged(hasFocus);
+        CalcSceneSizesPositions();
+
+    }
+
+
+    public void CalcSceneSizesPositions(){
+        FrameWidht = myFrameLayout.getWidth();
+        FrameHeight = myFrameLayout.getHeight();
+        int h;
+        int w;
+        int x;
+        int y;
+
+        x_center=FrameWidht/2;
+        y_center=FrameHeight/2;
+
+        // set size and position on every scene
+        for (int iS=0; iS<SViews.size(); iS++){
+
+            //TODO:Attenzione a come calcola Nwidht e Nheight a partire da Mposition
+            w=(int)(SViews.get(iS).scene.Nwidht*FrameWidht);
+            h = (int)(w*SViews.get(iS).scene.Nheight/SViews.get(iS).scene.Nwidht);
+            if (h>SViews.get(iS).scene.Nheight*FrameHeight) {
+                h = (int)(SViews.get(iS).scene.Nheight*FrameHeight);
+                w = (int)(h*SViews.get(iS).scene.Nwidht/SViews.get(iS).scene.Nheight);
+            }
+            x = (int)((float)(SViews.get(iS).scene.cStart)/(float)(myStripe.colonne)*FrameWidht);
+            y = (int)((float)(SViews.get(iS).scene.rStart)/(float)(myStripe.righe)*FrameHeight);
+
+            // set the default position and size attributes
+            SViews.get(iS).orig_x = x;
+            SViews.get(iS).orig_y = y;
+            SViews.get(iS).orig_w = w;
+            SViews.get(iS).orig_h = h;
+
+            // set the actual position and size attributes
+            SViews.get(iS).x = x;
+            SViews.get(iS).y = y;
+            SViews.get(iS).width = w;
+            SViews.get(iS).height = h;
+
+            // TODO: move only at initialization
+            moveSizeScene(SViews.get(iS),x,y,w,h);
+        }
+
+
+    }
+
+    public void moveSizeScene(SView Sv,int x,int y,int w,int h){
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams)Sv.getLayoutParams();
+        params.topMargin = y;
+        params.leftMargin = x;
+        params.width=w;
+        params.height=h;
+        Sv.setLayoutParams(params);
+
+    }
+
+    // pan and zoom method
+    public void PanZoom(float x_center,float y_center,float scale){
+
+        // for pan the initial coordinates of the Views are used
+
+        float dX = FrameWidht/2-x_center;
+        float dY = FrameHeight/2-y_center;
+        int xN,yN,wN,hN;
+
+        for (int iS=0; iS<SViews.size(); iS++){
+
+            xN = (int) (SViews.get(iS).orig_x + dX + (SViews.get(iS).orig_x-x_center)*(scale-1));
+            yN = (int) (SViews.get(iS).orig_y + dY+ (SViews.get(iS).orig_y-y_center)*(scale-1));
+            wN = (int) (SViews.get(iS).orig_w*scale);
+            hN = (int) (SViews.get(iS).orig_h*scale);
+            moveSizeScene(SViews.get(iS), xN ,yN ,wN ,hN );
+
+        }
+
+
+
+    }
+
+
+
+
+
 
 
 
@@ -124,6 +241,138 @@ public class MainActivity extends Activity {
     private float mFocusY;
     private float mFocusX;
 
+    private float[] scaledPointsToScreenPoints(float[] a) {
+        mScaleMatrix.mapPoints(a);
+        mTranslateMatrix.mapPoints(a);
+        return a;
+    }
+
+    private float[] screenPointsToScaledPoints(float[] a){
+        mTranslateMatrixInverse.mapPoints(a);
+        mScaleMatrixInverse.mapPoints(a);
+        return a;
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        mDispatchTouchEventWorkingArray[0] = ev.getX();
+        mDispatchTouchEventWorkingArray[1] = ev.getY();
+        mDispatchTouchEventWorkingArray = screenPointsToScaledPoints(mDispatchTouchEventWorkingArray);
+        ev.setLocation(mDispatchTouchEventWorkingArray[0],
+                mDispatchTouchEventWorkingArray[1]);
+
+        return super.dispatchTouchEvent(ev);
+
+    }
+
+    /*
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        switch (ev.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                FirstMove=true;
+                break;
+            case MotionEvent.ACTION_CANCEL:
+            case MotionEvent.ACTION_UP:
+                break;
+            case MotionEvent.ACTION_MOVE: {
+                return true;
+            }
+        }
+
+        return false;
+
+    }
+    */
+
+    @Override
+    public boolean onTouchEvent(MotionEvent ev) {
+        mOnTouchEventWorkingArray[0] = ev.getX();
+        mOnTouchEventWorkingArray[1] = ev.getY();
+
+        mOnTouchEventWorkingArray = scaledPointsToScreenPoints(mOnTouchEventWorkingArray);
+
+        ev.setLocation(mOnTouchEventWorkingArray[0], mOnTouchEventWorkingArray[1]);
+        mScaleDetector.onTouchEvent(ev);
+
+        // this is called if there is an ACTION DOWN inside a child, the onInterceptTouchEvent is true only for
+        // sequent move event
+        if (FirstMove) {
+            mDispatchTouchEventWorkingArray[0] = ev.getX();
+            mDispatchTouchEventWorkingArray[1] = ev.getY();
+            mDispatchTouchEventWorkingArray = screenPointsToScaledPoints(mDispatchTouchEventWorkingArray);
+
+            mLastTouchX = ev.getX();
+            mLastTouchY = ev.getY();
+            // Save the ID of this pointer
+            mActivePointerId = ev.getPointerId(0);
+            FirstMove=false;
+        }
+
+
+        final int action = ev.getAction();
+        switch (action & MotionEvent.ACTION_MASK) {
+            case MotionEvent.ACTION_DOWN: {
+
+                final float x = ev.getX();
+                final float y = ev.getY();
+
+                mLastTouchX = x;
+                mLastTouchY = y;
+
+                // Save the ID of this pointer
+                mActivePointerId = ev.getPointerId(0);
+                break;
+
+            }
+
+            case MotionEvent.ACTION_MOVE: {
+
+                // Find the index of the active pointer and fetch its position
+                final int pointerIndex = ev.findPointerIndex(mActivePointerId);
+                final float x = ev.getX(pointerIndex);
+                final float y = ev.getY(pointerIndex);
+                mPosX=0;
+                mPosY=0;
+                mPosX = mLastTouchX-x;
+                mPosY = mLastTouchY-y;
+
+
+                mLastTouchX = x;
+                mLastTouchY = y;
+
+                Iinvalidate(false);
+                break;
+            }
+
+            case MotionEvent.ACTION_UP: {
+                mActivePointerId = INVALID_POINTER_ID;
+                break;
+            }
+
+            case MotionEvent.ACTION_CANCEL: {
+                mActivePointerId = INVALID_POINTER_ID;
+                break;
+            }
+
+            case MotionEvent.ACTION_POINTER_UP: {
+                // Extract the index of the pointer that left the touch sensor
+                final int pointerIndex = (action & MotionEvent.ACTION_POINTER_INDEX_MASK) >> MotionEvent.ACTION_POINTER_INDEX_SHIFT;
+                final int pointerId = ev.getPointerId(pointerIndex);
+                if (pointerId == mActivePointerId) {
+                    // This was our active pointer going up. Choose a new
+                    // active pointer and adjust accordingly.
+                    final int newPointerIndex = pointerIndex == 0 ? 1 : 0;
+                    mLastTouchX = ev.getX(newPointerIndex);
+                    mLastTouchY = ev.getY(newPointerIndex);
+                    mActivePointerId = ev.getPointerId(newPointerIndex);
+                    Log.i("ddd", "" + ev.getY(newPointerIndex));
+                }
+                break;
+            }
+        }
+        return true;
+    }
 
     private class ScaleListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
 
@@ -138,8 +387,7 @@ public class MainActivity extends Activity {
             mScaleMatrix.setScale(mScaleFactor, mScaleFactor,
                     mFocusX, mFocusY);
             mScaleMatrix.invert(mScaleMatrixInverse);
-
-            Iinvalidate();
+            Iinvalidate(true);
             //requestLayout();
 
 
@@ -148,45 +396,83 @@ public class MainActivity extends Activity {
     }
 
 
-
-    public void Iinvalidate(){
+    public void Iinvalidate(boolean ActionScala){
         Log.i("i", "invalidate CALLED !!!!!!");
         Log.i("i","FattoreScala : " + mScaleFactor);
         Log.i("i","mFocusX : " + mFocusX);
         Log.i("i","mFocusY : " + mFocusY);
+        Log.i("i","mPosX : " + mPosX);
+        Log.i("i","mPosY : " + mPosY);
+        x_center = x_center + mPosX;
+        y_center = y_center + mPosY;
+        if (ActionScala) {
+            scale = mScaleFactor;
+        }
+        PanZoom(x_center,y_center,scale);
+
+        //TODO non va qui...
+        SViews.get(0).status=0;
+        SViews.get(1).status=0;
+
         //TranslateAnimation anim=new TranslateAnimation(0, 0, 0, 40);
         //anim.setFillAfter(true);
         //anim.setDuration(1000);
         //StripeViews.get(1).startAnimation(anim);
 
-
-
+        /* Animation - Can't move multiple views
         TranslateAnimation anim = new TranslateAnimation(0, 100, 0, 100);
         anim.setDuration(1000);
-
         anim.setAnimationListener(new TranslateAnimation.AnimationListener() {
-
             @Override
             public void onAnimationStart(Animation animation) { }
-
             @Override
             public void onAnimationRepeat(Animation animation) { }
-
             @Override
             public void onAnimationEnd(Animation animation)
             {
-                FrameLayout.LayoutParams params = (FrameLayout.LayoutParams)StripeViews.get(1).getLayoutParams();
+                FrameLayout.LayoutParams params = (FrameLayout.LayoutParams)SViews.get(1).getLayoutParams();
                 params.topMargin += 100;
                 params.leftMargin += 100;
-                StripeViews.get(1).setLayoutParams(params);
+                SViews.get(1).setLayoutParams(params);
             }
         });
-
-        StripeViews.get(1).startAnimation(anim);
+        SViews.get(1).startAnimation(anim);
+        */
 
 
 
     }
+
+
+    // This method is called from a touch event on SView
+    public void RequestEditFromView(int id){
+
+        Log.i("TAG","Requested EDIT status View "+id);
+
+
+        // Ask Pan and Zoom Views
+        // Calc translation of the views
+        //(consider id = id_scene)
+        x_center=SViews.get(id-1).orig_x+SViews.get(id-1).orig_w/2;
+        y_center=SViews.get(id-1).orig_y+SViews.get(id-1).orig_h/2;
+        // calc scale
+        scale = (float)(FrameWidht)/SViews.get(id-1).orig_w;
+        if ((float)(FrameHeight)/SViews.get(id-1).orig_h<(float)(FrameWidht)/SViews.get(id-1).orig_w){
+            scale = (float)(FrameHeight)/SViews.get(id-1).orig_h;
+        }
+        scale = scale*9/10;
+
+
+        PanZoom(x_center,y_center,scale);
+
+        // change EDIT status of the SView
+        SViews.get(id-1).status=EDIT;
+
+        app.setCourrentIdScene(id);
+
+    }
+
+
 
 
 
@@ -294,126 +580,21 @@ public class MainActivity extends Activity {
         super.onResume();
         layoutUI();
 
-        Bitmap bmp_shot = app.myStripe.scenes.get(0).bmp_shot;
-        if (bmp_shot!=null){
-            mySView.setStripe(app.myStripe);
+        // TODO implement!
+
+        //update the bmp
+        myStripe=app.myStripe;
+        for (int iS=0; iS<myStripe.scenes.size(); iS++){
+            SViews.get(iS).setShot(myStripe.scenes.get(iS).bmp_shot);
         }
 
-    }
-
-
-
-
-
-
-    public void CreateNewStripe(){
-
-        int id_scene=1;
-        myStripe = new Stripe();
-        myStripe.MPosition[0][0]=id_scene;
-
-        Scene myscene = new Scene(id_scene,myStripe);
-        myStripe.scenes.add(myscene);
-
-        //AddViews();
-
-        // Procedure to add a scene
-        // ask for last id
-        int LastId = myStripe.getLastIdScene();
-
-
-        /*
-        // Expand row or column of new matrix
-        int Nrighe = myStripe.righe;
-        int Ncolonne = myStripe.colonne+1;
-        int [][] newMPosition = new int[Nrighe][Ncolonne];
-        for (int i = 0; i < Nrighe; i++) {
-            for (int c = 0; c < Ncolonne; c++) {
-                if (i>myStripe.righe-1||c>myStripe.colonne-1){
-                    newMPosition[i][c]=0;
-                }else{
-                    newMPosition[i][c]=myStripe.MPosition[i][c];
-                }
-
-            }
-        }
-
-        // Write new cell id
-        newMPosition[0][1]=LastId+1;
-
-        // Add scene to matrix and calc again all the sizes
-        myStripe.addCellScene(newMPosition);
-
-        // Update all the views
-        AddViews();
-        */
-
+        //Bitmap bmp_shot = app.myStripe.scenes.get(0).bmp_shot;
+        //if (bmp_shot!=null){
+        //    SView.setStripe(app.myStripe);
+        //}
 
 
     }
-
-
-
-/**
-    public void AddViews(){
-        int id_scene;
-        boolean trovato;
-        int iSV_tro;
-
-
-        for (int iS =0; iS< myStripe.scenes.size(); iS++){
-            id_scene=myStripe.scenes.get(iS).id_scene;
-
-            // search id_scene in StripeViews
-            trovato = false;
-            iSV_tro = 0;
-            for (int iSV=0; iSV<StripeViews.size(); iSV++){
-                if (id_scene==StripeViews.get(iSV).id_scene){
-                    trovato=true;
-                    iSV_tro = iSV;
-                    break;
-                }
-            }
-
-            if (trovato==false){
-                // add new StripeViews
-                StripeViews.add(iS,new StripesView(this.getApplicationContext()));
-                StripeViews.get(iS).id_scene=id_scene;
-                StripeViews.get(iS).setScene(myStripe.scenes.get(iS));
-                myZoomableViewGroup.addView(StripeViews.get(iS));
-            }
-
-            //myZoomableViewGroup.invalidate();
-
-            // Change view property
-            StripeViews.get(iS).setBackgroundColor(Color.WHITE);
-
-
-
-            //ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) myZoomableViewGroup.getLayoutParams();
-            ViewGroup.MarginLayoutParams lp = new ViewGroup.MarginLayoutParams(ViewGroup.MarginLayoutParams.MATCH_PARENT,ViewGroup.MarginLayoutParams.WRAP_CONTENT);
-            lp.leftMargin=200;
-            StripeViews.get(iS).setLayoutParams(lp);
-
-
-
-
-            //ZoomableViewGroup.MarginLayoutParams layoutParams=new ZoomableViewGroup.MarginLayoutParams(ZoomableViewGroup.MarginLayoutParams.WRAP_CONTENT,ZoomableViewGroup.MarginLayoutParams.WRAP_CONTENT);
-            //layoutParams.setMargins(200, 100, 10, 10);
-            //StripeViews.get(iS).setLayoutParams(layoutParams);
-
-            // try to move the view
-            // Other attributes of backgroundImageView to modify
-
-
-            //myZoomableViewGroup.invalidate();
-
-
-
-        }
-
-    }
- */
 
 
 

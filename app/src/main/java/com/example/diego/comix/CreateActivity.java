@@ -1442,6 +1442,7 @@ public class CreateActivity extends Activity {
 
         //this.preview.takePicturePressed();
 
+
         finish();
     }
     

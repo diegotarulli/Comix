@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Created by Diego on 11/02/2015.
  */
-class Stripe{
+class Stripe {
 
     List<Scene> scenes;
     int[][] MPosition;
@@ -16,33 +16,60 @@ class Stripe{
     int colonne;
 
 
-    Stripe(){
+    Stripe() {
 
         scenes = new ArrayList<Scene>();
         //initialize scenes matrix
         // initialize M matrix
-        righe=1;
-        colonne=1;
+        righe = 1;
+        colonne = 1;
         MPosition = new int[righe][colonne];
         for (int i = 0; i < righe; i++) {
             for (int c = 0; c < colonne; c++) {
-                MPosition[i][c]=0;
+                MPosition[i][c] = 0;
             }
         }
     }
 
 
-    public int getLastIdScene(){
+    public int getLastIdScene() {
         int LastId = 0;
         for (int i = 0; i < righe; i++) {
             for (int c = 0; c < colonne; c++) {
-                if (MPosition[i][c]>LastId){
-                    LastId=MPosition[i][c];
+                if (MPosition[i][c] > LastId) {
+                    LastId = MPosition[i][c];
                 }
             }
         }
         return LastId;
     }
+
+
+    public void setMPositionSize(int Nrighe, int Ncolonne) {
+
+
+
+        // Expand row or column of new matrix
+        int[][] newMPosition = new int[Nrighe][Ncolonne];
+        for (int i = 0; i < Nrighe; i++){
+          for (int c = 0; c < Ncolonne; c++) {
+              if (i > righe - 1 || c > colonne - 1) {
+                  newMPosition[i][c] = 0;
+              } else {
+                  newMPosition[i][c] = MPosition[i][c];
+              }
+          }
+        }
+        MPosition=newMPosition;
+        //update attributes
+        righe= Nrighe;
+        colonne=Ncolonne;
+    }
+
+
+
+
+
 
     public void addCellScene(int[][] newMPosition){
         // calc new size
@@ -73,14 +100,59 @@ class Stripe{
                         scenes.add(myscene);
                     }else{
                         // re-calc founded scene size
-                        scenes.get(is_found).calcSize();
+                        //scenes.get(is_found).calcSize();
 
                     }
 
                 }
             }
         }
+    }
 
+
+
+
+    public void calcScenesSize(){
+
+        float Nheight;
+        float Nwidht;
+        int cStart;
+        int rStart;
+        int id_scene;
+
+        // for every scenes..
+        for (int iSc=0; iSc<scenes.size(); iSc++) {
+            //calc size based on the cell occupied in the MPosition
+            Nheight = 0;
+            Nwidht = 0;
+            cStart = colonne;
+            rStart = righe;
+            id_scene=scenes.get(iSc).id_scene;
+
+            int Ncell = 0;
+            for (int i = 0; i < righe; i++) {
+                int NwidhtNew = 0;
+                for (int c = 0; c < colonne; c++) {
+                    if (MPosition[i][c] == id_scene) {
+                        if (i < rStart) {
+                            scenes.get(iSc).rStart = i;
+                        }
+                        if (c < cStart) {
+                            scenes.get(iSc).cStart = c;
+                        }
+                        Ncell++;
+                        NwidhtNew++;
+                        if (NwidhtNew > Nwidht) {
+                            Nwidht = NwidhtNew;
+                        }
+                    }
+                }
+            }
+            Nheight = (int) (Ncell / Nwidht);
+
+            scenes.get(iSc).Nheight = Nheight / righe;
+            scenes.get(iSc).Nwidht = Nwidht / colonne;
+        }
     }
 
 
@@ -105,34 +177,10 @@ class Scene{
         this.myS=myS;
         this.id_scene=(id_scene);
 
-        calcSize();
         addFumetto();
     }
 
-    void calcSize(){
-        //calc size based on the cell occupied in the MPosition
-        Nheight=0;
-        Nwidht=0;
-        cStart=myS.colonne;
-        rStart=myS.righe;
-        int Ncell=0;
-        for (int i = 0; i < myS.righe; i++) {
-            int NwidhtNew=0;
-            for (int c = 0; c < myS.colonne; c++) {
-                if (myS.MPosition[i][c]==id_scene) {
-                    if (i<rStart){rStart=i;}
-                    if (c<cStart){cStart=c;}
-                    Ncell++;
-                    NwidhtNew++;
-                    if (NwidhtNew>Nwidht){Nwidht=NwidhtNew;}
-                }
-            }
-        }
-        Nheight=(int)(Ncell/Nwidht);
 
-        Nheight = Nheight/myS.righe;
-        Nwidht = Nwidht/myS.colonne;
-    }
 
 
 
@@ -163,7 +211,7 @@ class fumetto{
         this.yf=50+10;
     }
 
-    void calcRealCoords(int w,int h){
+    void calcRealCoords(float w,float h){
         this.xf_r=this.xf*w/100;
         this.xi_r=this.xi*w/100;
         this.yf_r=this.yf*w/100;
